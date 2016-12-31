@@ -5,6 +5,35 @@ http://spark.apache.org/downloads.html
 
 #Apache Spark
 
+##Prerequisities & Set-up
+The material uses [vagrant](https://www.vagrantup.com/) for demonstration and hands-on exercises.
+
+Install Vagrant following this [link](https://www.vagrantup.com/docs/installation/) and also install virtualbox which shall be used as the virtual machine provider. Once installed we spin up a virtual machine to try our exercises.
+
+To bring the vm up execute the following commands
+
+$ wget https://raw.githubusercontent.com/somasundaramsekar/sparkquickbook/master/spark-vagrant.json
+
+
+    $ vagrant box add spark-vagrant.json
+    $ vagrant up
+
+To login to the vm
+
+    $ vagrant ssh
+
+To stop the vm
+
+    $ vagrant halt
+
+To destroy the vm
+
+    $ vagrant destroy
+
+**Note**: destroy will purge the virtual machine as a whole, this can be used, for instance to quickly destroy and bring vm back from the base state.
+
+**Note**: additionally you can mount a local folder into the vm, that way use can use IDE to work with the Spark project, while packaging and running that from inside the vm.
+
 ##Introduction
 Apache Spark is a cluster computing platform designed to be fast and general-purpose.
 
@@ -31,13 +60,13 @@ RDD(Resilient Distributed Dataset) is at the core of the Spark abstracting the d
 
 <a href="http://imgur.com/YGGNKzR"><img src="http://i.imgur.com/YGGNKzR.jpg" title="source: imgur.com" /></a>
 
-Let us take an example of the file that is stored in HDFS, HDSF by default splits the files into blocks of 128MB and saves it across datanodes for resiliency. RDD are the abstraction of this distribution, hiding away the complexity of storage, execution and fault tolerance from the clients.
+Let us take an example of the file that is stored in HDFS, HDFS by default splits the files into blocks of 128MB and saves it across datanodes for resiliency. RDD are the abstraction of this distribution, hiding away the complexity of storage, execution and fault tolerance from the clients.
 
 Spark code when executed, creates a lineage graph(DAG). the scheduler, then schedules the execution of the the DAG in each of the nodes in which the data resides. This is similar to Hadoop Map-Reduce, where map tasks executes on local data and reduce tasks shuffles the data across nodes to produce results.
 
 In Spark, the data is loaded into the main memory(RAM) and the individual tasks(stages) of the Job(An Spark program) is run. This provides the speed that distinguishes Spark from Hadoop Map-Reduce. The data(RDD) can be cached(in-memory or on disk) between stages and multiple tasks can be run on the same cached RDD.
 
-With that context let us have a look at the generic wordcount example with Spark Scala api
+With that context let us have a look at the generic wordcount example with Spark Scala api with detailed documentataion
 
 ```scala
 import org.apache.spark.sql.SparkSession
@@ -76,7 +105,6 @@ object Wordcount extends App {
   }
 }
 ```
-
 
 
 
