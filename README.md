@@ -105,6 +105,8 @@ object Wordcount extends App {
 }
 ```
 
+**NOTE**: All the execution from the `sbt console`, or `spark-shell repl` or by executing the above class from an IDE are all executed within an JVM using the spark libraries. This is a quick way to get a taste of the Spark code you write(in most cases), but in most cases the same code can run without any change(except for few configurations, like master URL) in the cluster.
+
 ##The Spark RDD
 We will dedicate this entire section to RDD, the core of Spark's execution engine, that the api's like DataFrame and DataSet user internally and which was atleast until 1.x was the primary programming interface for Spark.
 
@@ -116,12 +118,47 @@ RDD as explained previously is an abstraction of distributed collection of data,
     scala> val fileAfterSplit = file.flatMap(line => line.split(" "))
     fileAfterSplit: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[5] at flatMap at <console>:23
 
-it is evident from the above 2 lines of code that two different instance of `MapPartitionsRDD[..]` is created. one per each transformation.
+it is evident from the above 2 lines of code that two different instance of `RDD[String]` is created. one per each transformation.
 
-Users can create an RDD by loading an external dataset like from a local file, files from HDFS or Amazon S3, but also from an local collection of object, but you dont want to do that in prouction though, that we cannot either load terabytes of objects into the clients memory or distribute them over network, that said, this is how we do it, though, with the `parallelize()` method
+Users can create an RDD by loading an external dataset like from a local file, files from HDFS or Amazon S3, but also from an local collection of object, but you dont want to do that in production though, that we cannot either load terabytes of objects into the clients memory or distribute them over network. That said, this is how we do it, with the `parallelize()` method of SparkContext
 
     scala> val lines = sc.parallelize(List("A", "Sample", "in memory", "object", "collection"))
     lines: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[9] at parallelize at <console>:22
+
+###Operations
+RDD allows two types of operations on dataset, *transformations and actions*.
+
+If an operation on a method return an RDD it is an transformation, otherwise the method is an action. Transformations are fundamentally very different from actions, that transformation are not executed until the action action is called on an RDD.
+
+Actions either returns an result back to the client or perform an side-effect such as saving the result to an hdfs file or caching the intermediate RDD etc.,
+
+Let us try to understand them with an example, fire up with `spark-shell` with `sbt console` from `scalaquickbook/` folder, from within the vagrant vm.
+
+**NOTE**: The cloned github project has an `supportingfiles/` folder with the supporting files of this material
+
+Let us analyze a sample apache web server log file with Spark
+
+1. Load the File
+
+    scala> val logFile = sc.textFile("supportingfiles/access_log")
+    16/12/31 14:00:54 INFO SparkContext: Created broadcast 1 from textFile at <console>:22
+    logFile: org.apache.spark.rdd.RDD[String] = supportingfiles/access_log MapPartitionsRDD[3] at textFile at <console>:22
+
+2. Split each line with empty space as delimiter
+
+    scala> val splitLines = logFile.map(line => line.split("""\s+"""))
+    splitLines: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[6] at map at <console>:23
+
+we see that type of RDD is now transformed from RDD[String] to RDD[Array[String]], as of this point no processing has occured, except for loading the file into memory, since the file is a local file, in which case the `textFile()` will load the file into memory.
+
+3. To get a taste of what has happened to the file, let us trigger an action
+
+    scala> splitLines.first
+
+on this, you see spark spinning up jobs and you will notice that file is actually getting processed after which you will receive the result of your action `first()`, which is to get the first element of the collection the `Array[String]`
+
+    res3: Array[String] = Array(64.242.88.10, -, -, [07/Mar/2004:16:05:49, -0800], "GET, /twiki/bin/edit/Main/Double_bounce_sender?topicparent=Main.ConfigurationVariables, HTTP/1.1", 401, 12846)
+
 
 
 ##References
@@ -130,4 +167,5 @@ Users can create an RDD by loading an external dataset like from a local file, f
  2. https://www.safaribooksonline.com/library/view/spark-in-action
  3. https://www.safaribooksonline.com/library/view/advanced-analytics-with/
  4.
+
 
