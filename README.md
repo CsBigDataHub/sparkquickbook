@@ -1,20 +1,19 @@
-# sparkquickbook
-A quick book on Spark with Scala
-https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/SingleCluster.html
-http://spark.apache.org/downloads.html
-
 #Apache Spark
 
 ##Prerequisities & Set-up
 The material uses [vagrant](https://www.vagrantup.com/) for demonstration and hands-on exercises.
 
-Install Vagrant following this [link](https://www.vagrantup.com/docs/installation/) and also install virtualbox which shall be used as the virtual machine provider. Once installed we spin up a virtual machine to try our exercises.
+**Note**: Install Vagrant following this [link](https://www.vagrantup.com/docs/installation/) and also install virtualbox which shall be used as the virtual machine provider. Once installed we spin up a virtual machine to try our exercises.
+
+To download and run the exercises clone the github repository with
+
+    $ git clone https://github.com/somasundaramsekar/sparkquickbook.git
 
 To bring the vm up execute the following commands
 
-$ wget https://raw.githubusercontent.com/somasundaramsekar/sparkquickbook/master/spark-vagrant.json
 
 
+    $ cd sparkquickbook
     $ vagrant box add spark-vagrant.json
     $ vagrant up
 
@@ -56,7 +55,7 @@ Spark is written in scala and provides programming api for Scala, Java, Python a
 
 
 
-RDD(Resilient Distributed Dataset) is at the core of the Spark abstracting the distributed computation, that gives it the ability to provide myraid of api and connectors to both upstream  clients and downstream datasources and streams.
+RDD(Resilient Distributed Dataset) is at the core of Spark, abstracting the distributed computation, that gives it the ability to provide myraid of api and connectors to both upstream  clients and downstream datasources and streams.
 
 <a href="http://imgur.com/YGGNKzR"><img src="http://i.imgur.com/YGGNKzR.jpg" title="source: imgur.com" /></a>
 
@@ -106,8 +105,23 @@ object Wordcount extends App {
 }
 ```
 
+##The Spark RDD
+We will dedicate this entire section to RDD, the core of Spark's execution engine, that the api's like DataFrame and DataSet user internally and which was atleast until 1.x was the primary programming interface for Spark.
 
+RDD as explained previously is an abstraction of distributed collection of data, this abstraction helps hide the complexities of Distribution of data, aka partitions and provides a uniform functional collection like interface to work with. RDD is immutable, that is it any transformation when executed, does not mutate the data, instead returns new RDD with the transformation applied.
 
+    scala> val file = sc.textFile("README.md")
+    file: org.apache.spark.rdd.RDD[String] = README.md MapPartitionsRDD[3] at textFile at <console>:22
+
+    scala> val fileAfterSplit = file.flatMap(line => line.split(" "))
+    fileAfterSplit: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[5] at flatMap at <console>:23
+
+it is evident from the above 2 lines of code that two different instance of `MapPartitionsRDD[..]` is created. one per each transformation.
+
+Users can create an RDD by loading an external dataset like from a local file, files from HDFS or Amazon S3, but also from an local collection of object, but you dont want to do that in prouction though, that we cannot either load terabytes of objects into the clients memory or distribute them over network, that said, this is how we do it, though, with the `parallelize()` method
+
+    scala> val lines = sc.parallelize(List("A", "Sample", "in memory", "object", "collection"))
+    lines: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[9] at parallelize at <console>:22
 
 
 ##References
