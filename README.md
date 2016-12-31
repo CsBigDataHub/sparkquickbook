@@ -141,12 +141,14 @@ Let us analyze a sample apache web server log file with Spark
 1. Load the File
 
     scala> val logFile = sc.textFile("supportingfiles/access_log")
+    
     16/12/31 14:00:54 INFO SparkContext: Created broadcast 1 from textFile at <console>:22
     logFile: org.apache.spark.rdd.RDD[String] = supportingfiles/access_log MapPartitionsRDD[3] at textFile at <console>:22
 
 2. Split each line with empty space as delimiter
 
     scala> val splitLines = logFile.map(line => line.split("""\s+"""))
+    
     splitLines: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[6] at map at <console>:23
 we see that type of RDD is now transformed from RDD[String] to RDD[Array[String]], as of this point no processing has occured, except for loading the file into memory, since the file is a local file, in which case the `textFile()` will load the file into memory.
 
