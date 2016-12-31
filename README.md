@@ -138,27 +138,99 @@ Let us try to understand them with an example, fire up with `spark-shell` with `
 
 Let us analyze a sample apache web server log file with Spark
 
-1. Load the File
+* Load the File
 
-    scala> val logFile = sc.textFile("supportingfiles/access_log")
-    
+
+```scala
+
+scala> val logFile = sc.textFile("supportingfiles/access_log")
+
     16/12/31 14:00:54 INFO SparkContext: Created broadcast 1 from textFile at <console>:22
     logFile: org.apache.spark.rdd.RDD[String] = supportingfiles/access_log MapPartitionsRDD[3] at textFile at <console>:22
 
-2. Split each line with empty space as delimiter
+```
 
-    scala> val splitLines = logFile.map(line => line.split("""\s+"""))
-    
-    splitLines: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[6] at map at <console>:23
-we see that type of RDD is now transformed from RDD[String] to RDD[Array[String]], as of this point no processing has occured, except for loading the file into memory, since the file is a local file, in which case the `textFile()` will load the file into memory.
+ - Split each line with empty space as delimiter
 
-3. To get a taste of what has happened to the file, let us trigger an action
+```scala
+scala> val splitLines = logFile.map(line => line.split("""\s+"""))
 
-    scala> splitLines.first
+splitLines: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[6] at map at <console>:23
 
+```
+we see that type of RDD is now transformed from RDD[String] to RDD[Array[String]], as of this point no processing has occurred, except for loading the file into memory, since the file is a local file, in which case the `textFile()` will load the file into memory.
+
+ - To get a taste of what has happened to the file, let us trigger an action
+
+```scala
+scala> splitLines.first
+
+```
 on this, you see spark spinning up jobs and you will notice that file is actually getting processed after which you will receive the result of your action `first()`, which is to get the first element of the collection the `Array[String]`
+```scala
+res3: Array[String] = Array(64.242.88.10, -, -, [07/Mar/2004:16:05:49, -0800], "GET, /twiki/bin/edit/Main/Double_bounce_sender?topicparent=Main.ConfigurationVariables, HTTP/1.1", 401, 12846)
 
-    res3: Array[String] = Array(64.242.88.10, -, -, [07/Mar/2004:16:05:49, -0800], "GET, /twiki/bin/edit/Main/Double_bounce_sender?topicparent=Main.ConfigurationVariables, HTTP/1.1", 401, 12846)
+```
+
+* Now we can do some clean up of the data by removing the lines whose `Array` length is not = 10
+
+```scala
+scala> val validLogLines = splitLines.filter(splitline => splitline.length == 10)
+
+validLogLines: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[3] at filter at <console>:24
+```
+
+* We can now query the RDD for all the requests which did not receive ***200 OK*** from the server
+
+```scala
+scala> val errorResponses = validLogLines.filter(line => line(8) != "200")
+
+errorResponses: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[5] at filter at <console>:25
+```
+
+
+* Until now all the steps we have performed, did not return any result, because as said earlier, we have only performed `transformation` and only action will trigger execution and return non RDD results.
+
+```scala
+scala> errorResponses.count
+...
+...
+16/12/31 15:31:54 INFO Executor: Finished task 0.0 in stage 3.0 (TID 3). 1041 bytes result sent to driver
+16/12/31 15:31:54 INFO DAGScheduler: ResultStage 3 (count at <console>:27) finished in 0.133 s
+16/12/31 15:31:54 INFO DAGScheduler: Job 3 finished: count at <console>:27, took 0.187669 s
+res4: Long = 271
+```
+now `count()` in an action, that has triggered the execution of RDD in spark, returning an non RDD result of Integer, that we had asked for the count of request that has received *200* response.
+
+RDD like any programming language collections framework provides a lot of utilities for operating on the underlying dataset, like `union()` that can join two collections of same Type, `intersection()` that removes duplicate element between two RDDs etc.
+
+**NOTE**: `collect()` is one of the RDD action that just return the resulting collection back to the client, in anycase where spark is used in production, the results of humongous calculation are not meant to be sent back to the client, `collect()` is mostly used for testing a sample dataset locally, for debugging.
+
+####Evaluations
+Spark uses lazy evaluation of transformation operations to optimize and reduce the number of passes it has to go over the data. In the above log analysis example, we have defined more that one transformation, and spark engine can optimize them by grouping, say, the 2 `filter()` into a single `filter()` operation. So unlike map reduce, we can divide the program into multiple composable functions on RDD, and engine will take care of clubbing them together during execution.
+
+####Passing functions
+In Scala, we can pass in functions defined inline, references to methods, or static functions as we do for Scala’s other functional APIs. Some other considerations come into play, though—namely that the function we pass and the data referenced in it needs to be serializable (implementing Java’s Serializable interface). Passing a method or field of an object includes a reference to that whole object, we can instead extract the fields we need as local variables and avoid needing to pass the whole object containing them, shown in the below example
+
+```scala
+class Searching(val query: String) {
+  def matches(str: String): Boolean = str.contains(query)
+
+  def getMatchesFunctionReference(rdd: RDD[String]): RDD[String] = {
+    // Problem: "isMatch" means "this.isMatch", so we pass all of "this"
+    rdd.map(isMatch)
+  }
+  def getMatchesFieldReference(rdd: RDD[String]): RDD[String] = {
+    // Problem: "query" means "this.query", so we pass all of "this"
+    rdd.map(x => x.split(query))
+  }
+  def getMatchesNoReference(rdd: RDD[String]): RDD[String] = {
+    // Safe: extract just the field we need into a local variable
+    val query_ = this.query
+    rdd.map(x => x.split(query_))
+  }
+}
+```
 
 
 
