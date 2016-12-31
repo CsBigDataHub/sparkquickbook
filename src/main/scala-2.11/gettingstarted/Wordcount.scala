@@ -25,13 +25,14 @@ object Wordcount extends App {
   val counts = file.flatMap(line => line.split(" "))
     .map(word => (word, 1)).countByKey()
 
+
   /*
   A Spark program and inturn the DAG created from it, is divided into two categories
   Transformation: Code that specifies how the collection is to be manipulated
   Actions: The actual execution trigerring methids
   in this example collect() is the only action method, which triggers the execution of RDD DAG
    */
-  counts.collect{
+  counts.collect {
     case (word, count) => println(s"$word $count")
   }
 }
