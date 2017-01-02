@@ -288,6 +288,38 @@ res10: Array[Int] = Array(1, 2, 2, 4, 3, 6, 4, 8)
 
 ```
 
+**Set operations**
+
+Let us define some simple distributed collection with `parallelize()`
+
+```scala
+scala> val rdd1 = sc.parallelize(List(3, 6, 4, 3, 6, 8, 22, 53))
+rdd1: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[0] at parallelize at <console>:22
+
+scala> val rdd2 = sc.parallelize(List(1, 2, 3, 4, 5, 6, 7 ,8, 9))
+rdd2: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1] at parallelize at <console>:22
+```
+
+`distinct()` - to find the distinct element in the collection
+
+```scala
+scala> rdd1.distinct.collect
+res2: Array[Int] = Array(4, 53, 22, 6, 3, 8)
+```
+
+`union()` - a full outer join on two collections
+```scala
+scala> rdd1.union(rdd2).collect
+res4: Array[Int] = Array(3, 6, 4, 3, 6, 8, 22, 53, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+```
+
+`intersection()` - only the matching elements between two collection
+
+```scala
+scala> rdd1.intersection(rdd2).collect
+res7: Array[Int] = Array(4, 6, 3, 8)
+```
+
 
 
 ##References
