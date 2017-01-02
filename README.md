@@ -214,6 +214,9 @@ In Scala, we can pass in functions defined inline, references to methods, or sta
 
 ```scala
 class Searching(val query: String) {
+/*
+isMatch() and query are instance level properties, passing them require, passing the reference of the whole object
+*/
   def matches(str: String): Boolean = str.contains(query)
 
   def getMatchesFunctionReference(rdd: RDD[String]): RDD[String] = {
@@ -230,6 +233,59 @@ class Searching(val query: String) {
     rdd.map(x => x.split(query_))
   }
 }
+```
+
+###**Quick examples**
+Let us look at some quick examples of RDD tansformations and actions.
+
+**Elementwise operations**
+Element operations are like applying higerorder functions to the Scala collections, performing transformation per element.
+
+**`map()`** applies a transformation function per element to a distributed collection(**RDD**).  The resulting RDD can be of the same type of the input collection, or of a different type
+
+<a href="http://imgur.com/25qEe0v"><img src="http://i.imgur.com/25qEe0v.jpg" title="source: imgur.com" /></a>
+
+```scala
+scala> sc.parallelize(List(1, 2, 3, 4))
+res0: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[0] at parallelize at <console>:23
+
+scala> val doubleRDD = intRDD.map(element => element * 1.0d)
+doubleRDD: org.apache.spark.rdd.RDD[Double] = MapPartitionsRDD[2] at map at <console>:23
+
+scala> doubleRDD.collect
+res7: Array[Double] = Array(1.0, 2.0, 3.0, 4.0)
+```
+
+**`filter()`** applies a predicate on each element and creates a new collection that has only the elements that satisfies the predicate
+
+<a href="http://imgur.com/TB0ZvaX"><img src="http://i.imgur.com/TB0ZvaX.png" title="source: imgur.com" /></a>
+
+```scala
+scala> val filteredRdd = intRDD.filter(x => x % 2 == 0)
+filteredRdd: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[3] at filter at <console>:23
+
+scala> filteredRdd.collect
+res8: Array[Int] = Array(2, 4)
+```
+**`flatMap()`** is similar to map, applying transformation function per element, but the transformation function could produce a new collection per element, the flatMap allows you to flatten the resulting collection
+
+<a href="http://imgur.com/BzGs0yL"><img src="http://i.imgur.com/BzGs0yL.png" title="source: imgur.com" /></a>
+
+```scala
+scala> val collectionMappedRDD = intRDD.map(x => List(x * 1, x * 2))
+collectionMappedRDD: org.apache.spark.rdd.RDD[List[Int]] = MapPartitionsRDD[5] at map at <console>:23
+
+scala> collectionMappedRDD.collect
+res9: Array[List[Int]] = Array(List(1, 2), List(2, 4), List(3, 6), List(4, 8))
+```
+
+```scala
+scala> val collectionFlatMappedRDD = intRDD.flatMap(x => List(x * 1, x * 2))
+collectionFlatMappedRDD: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[7] at flatMap at <console>:23
+
+scala> collectionFlatMappedRDD.collect
+res10: Array[Int] = Array(1, 2, 2, 4, 3, 6, 4, 8)
+
 ```
 
 
