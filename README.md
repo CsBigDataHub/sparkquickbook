@@ -1,5 +1,10 @@
 #Apache Spark
 
+##Goal
+The Goal is to get you introduced to the core concepts of Spark, starting with the basic programming APIs like RDD, Dataframes and the much recent DataSet and working our way up with much involved Case-studies  with SparkSQL and Spark MLib. 
+
+The material is mostly hands-on, so let's get the Spark set-up working first.
+
 ##Prerequisities & Set-up
 The material uses [vagrant](https://www.vagrantup.com/) for demonstration and hands-on exercises.
 
@@ -136,15 +141,21 @@ Let us try to understand them with an example, fire up with `spark-shell` with `
 
 **NOTE**: The cloned github project has an `supportingfiles/` folder with the supporting files of this material
 
+
+
+####Transformations
+**Note**: we will use `actions` like `collect()`, `first()` just to illustrate the materialization of actions. We will look at action in depth later.
+
 Let us analyze a sample apache web server log file with Spark
 
 * Load the File
 
 
+
 ```scala
 
 scala> val logFile = sc.textFile("supportingfiles/access_log")
-
+    
     16/12/31 14:00:54 INFO SparkContext: Created broadcast 1 from textFile at <console>:22
     logFile: org.apache.spark.rdd.RDD[String] = supportingfiles/access_log MapPartitionsRDD[3] at textFile at <console>:22
 
@@ -165,14 +176,14 @@ we see that type of RDD is now transformed from RDD[String] to RDD[Array[String]
 ```scala
 scala> splitLines.first
 
-```
+``` 
 on this, you see spark spinning up jobs and you will notice that file is actually getting processed after which you will receive the result of your action `first()`, which is to get the first element of the collection the `Array[String]`
 ```scala
 res3: Array[String] = Array(64.242.88.10, -, -, [07/Mar/2004:16:05:49, -0800], "GET, /twiki/bin/edit/Main/Double_bounce_sender?topicparent=Main.ConfigurationVariables, HTTP/1.1", 401, 12846)
 
-```
+``` 
 
-* Now we can do some clean up of the data by removing the lines whose `Array` length is not = 10
+* Now we can do some clean up of the data by removing the lines whose `Array` length is not = 10 
 
 ```scala
 scala> val validLogLines = splitLines.filter(splitline => splitline.length == 10)
@@ -189,7 +200,7 @@ errorResponses: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[5] at
 ```
 
 
-* Until now all the steps we have performed, did not return any result, because as said earlier, we have only performed `transformation` and only action will trigger execution and return non RDD results.
+* Until now all the steps we have performed, did not return any result, because as said earlier, we have only performed `transformation` and only action will trigger execution and return non RDD results. 
 
 ```scala
 scala> errorResponses.count
@@ -207,7 +218,7 @@ RDD like any programming language collections framework provides a lot of utilit
 **NOTE**: `collect()` is one of the RDD action that just return the resulting collection back to the client, in anycase where spark is used in production, the results of humongous calculation are not meant to be sent back to the client, `collect()` is mostly used for testing a sample dataset locally, for debugging.
 
 ####Evaluations
-Spark uses lazy evaluation of transformation operations to optimize and reduce the number of passes it has to go over the data. In the above log analysis example, we have defined more that one transformation, and spark engine can optimize them by grouping, say, the 2 `filter()` into a single `filter()` operation. So unlike map reduce, we can divide the program into multiple composable functions on RDD, and engine will take care of clubbing them together during execution.
+Spark uses lazy evaluation of transformation operations to optimize and reduce the number of passes it has to go over the data. In the above log analysis example, we have defined more that one transformation, and spark engine can optimize them by grouping, say, the 2 `filter()` into a single `filter()` operation. So unlike map reduce, we can divide the program into multiple composable functions on RDD, and engine will take care of clubbing them together during execution. 
 
 ####Passing functions
 In Scala, we can pass in functions defined inline, references to methods, or static functions as we do for Scala’s other functional APIs. Some other considerations come into play, though—namely that the function we pass and the data referenced in it needs to be serializable (implementing Java’s Serializable interface). Passing a method or field of an object includes a reference to that whole object, we can instead extract the fields we need as local variables and avoid needing to pass the whole object containing them, shown in the below example
@@ -215,10 +226,10 @@ In Scala, we can pass in functions defined inline, references to methods, or sta
 ```scala
 class Searching(val query: String) {
 /*
-isMatch() and query are instance level properties, passing them require, passing the reference of the whole object
+isMatch() and query are instance level properties, passing them require, passing the reference of the whole object	
 */
   def matches(str: String): Boolean = str.contains(query)
-
+  
   def getMatchesFunctionReference(rdd: RDD[String]): RDD[String] = {
     // Problem: "isMatch" means "this.isMatch", so we pass all of "this"
     rdd.map(isMatch)
@@ -235,7 +246,7 @@ isMatch() and query are instance level properties, passing them require, passing
 }
 ```
 
-###**Quick examples**
+#####**Quick examples**
 Let us look at some quick examples of RDD tansformations and actions.
 
 **Elementwise operations**
@@ -243,7 +254,7 @@ Element operations are like applying higerorder functions to the Scala collectio
 
 **`map()`** applies a transformation function per element to a distributed collection(**RDD**).  The resulting RDD can be of the same type of the input collection, or of a different type
 
-<a href="http://imgur.com/25qEe0v"><img src="http://i.imgur.com/25qEe0v.jpg" title="source: imgur.com" /></a>
+<a href="http://imgur.com/25qEe0v"><img src="http://i.imgur.com/25qEe0v.jpg" title="source: imgur.com" /></a>	
 
 ```scala
 scala> sc.parallelize(List(1, 2, 3, 4))
@@ -320,7 +331,10 @@ scala> rdd1.intersection(rdd2).collect
 res7: Array[Int] = Array(4, 6, 3, 8)
 ```
 
+####Actions
+As we have seen before action are the actual materialization step of the RDD, actions trigger execution of the DAG that runs in Spark workers against the distributed blocks of data to produce the result.
 
+Let us have a look at 
 
 ##References
 
